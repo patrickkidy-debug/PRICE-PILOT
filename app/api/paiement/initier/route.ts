@@ -4,7 +4,7 @@ import { PlanCode } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { estAdministrateur } from "@/lib/quota";
-import { creerPaiement, paiementConfigure } from "@/lib/paiement/paytech";
+import { PayTechError, creerPaiement, paiementConfigure } from "@/lib/paiement/paytech";
 import { minorToMajor } from "@/lib/money";
 
 const schema = z.object({
@@ -59,6 +59,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ token, urlRedirection, refCommande });
   } catch (erreur) {
     console.error("Erreur PayTech:", erreur);
+
+    // PayTech décrit précisément ce qui bloque (compte non activé, URL
+    // invalide) : on transmet son message plutôt qu'une erreur générique qui
+    // laisserait chercher.
+    if (erreur instanceof PayTechError) {
+      return NextResponse.json(
+        {
+          error: erreur.compteNonActive
+            ? "Les paiements ne sont pas encore activés. Le compte marchand PayTech doit être validé par leur support avant de pouvoir encaisser."
+            : `Paiement refusé par PayTech : ${erreur.messageUtilisateur}`,
+          compteNonActive: erreur.compteNonActive,
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Impossible de démarrer le paiement. Réessayez dans un instant." },
       { status: 502 },

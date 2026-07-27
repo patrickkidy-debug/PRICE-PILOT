@@ -47,12 +47,31 @@ export interface ReponsePaiement {
   urlRedirection: string;
 }
 
+/**
+ * Erreur renvoyée par PayTech elle-même. `messageUtilisateur` est sûr à
+ * afficher : il vient de PayTech et décrit une action concrète (activer le
+ * compte, corriger une URL), pas un détail technique interne.
+ */
+export class PayTechError extends Error {
+  constructor(
+    readonly messageUtilisateur: string,
+    readonly compteNonActive: boolean,
+  ) {
+    super(messageUtilisateur);
+    this.name = "PayTechError";
+  }
+}
+
 export async function creerPaiement(demande: DemandePaiement): Promise<ReponsePaiement> {
   if (!paiementConfigure()) {
     throw new Error("PAYTECH_API_KEY / PAYTECH_API_SECRET absents.");
   }
 
   const site = urlDuSite();
+  // PayTech refuse une URL d'IPN non HTTPS. En développement local (http://),
+  // on l'omet : la page de paiement s'ouvre quand même pour tester le parcours,
+  // mais l'abonnement ne s'activera pas — seule l'IPN peut l'activer.
+  const ipnUtilisable = site.startsWith("https://");
 
   const reponse = await fetch(ENDPOINT, {
     method: "POST",
@@ -68,7 +87,7 @@ export async function creerPaiement(demande: DemandePaiement): Promise<ReponsePa
       ref_command: demande.refCommande,
       command_name: demande.nomArticle,
       env: environnementPayTech(),
-      ipn_url: `${site}/api/paiement/ipn`,
+      ...(ipnUtilisable ? { ipn_url: `${site}/api/paiement/ipn` } : {}),
       success_url: `${site}/paiement/succes`,
       cancel_url: `${site}/paiement/annule`,
       custom_field: JSON.stringify(demande.champPersonnalise),
@@ -85,8 +104,13 @@ export async function creerPaiement(demande: DemandePaiement): Promise<ReponsePa
 
   const redirection = data.redirect_url ?? data.redirectUrl;
   if (!reponse.ok || data.success !== 1 || !data.token || !redirection) {
-    throw new Error(
-      `PayTech a refusé la demande : ${JSON.stringify(data.error ?? data)}`,
+    const messages = Array.isArray(data.error)
+      ? data.error.map(String)
+      : [JSON.stringify(data.error ?? data)];
+    const texte = messages.join(" ");
+    throw new PayTechError(
+      texte,
+      /activer votre compte|production/i.test(texte),
     );
   }
 

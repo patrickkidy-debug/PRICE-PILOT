@@ -1,0 +1,301 @@
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pg_trgm]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PlanCode {
+  FREE
+  START
+  STANDARD
+  GROWTH
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum UsageType {
+  SEARCH
+  CSV_EXPORT
+  ALERT_CREATED
+}
+
+enum AlertFrequency {
+  NONE
+  DAILY_DIGEST
+  IMMEDIATE
+}
+
+enum ObservationSource {
+  SCRAPER
+  MANUAL
+  USER_SUBMITTED
+}
+
+enum RetailerKind {
+  /// Grande enseigne avec succursales physiques (Auchan, Carrefour...)
+  CHAIN
+  /// Marchand exclusivement en ligne (Jumia, Amazon...) — non contraint par la distance
+  ONLINE
+  /// Petit commerçant / boutique de quartier, généralement ajouté par la communauté
+  LOCAL_SHOP
+}
+
+enum ProductCategory {
+  ALIMENTATION
+  BOISSONS
+  HYGIENE_BEAUTE
+  ELECTRONIQUE
+  ELECTROMENAGER
+  MAISON_JARDIN
+  AUTRE
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String?  @unique
+  phoneNumber        String?  @unique
+  passwordHash       String?
+  name               String?
+  role               Role     @default(USER)
+  defaultCity        String?
+  defaultCountryCode String?
+  defaultLat         Float?
+  defaultLng         Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  subscriptions     Subscription[]
+  usageLogs         UsageLog[]
+  priceAlerts       PriceAlert[]
+  contributedPrices PriceObservation[]
+  createdRetailers  Retailer[]
+  createdBranches   StoreBranch[]
+}
+
+// Tables standard requises par l'adaptateur Prisma d'Auth.js
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Plan {
+  id                    String   @id @default(cuid())
+  code                  PlanCode @unique
+  name                  String
+  /// Prix de l'abonnement dans la plus petite unité de `priceCurrency`.
+  priceMinor            Int
+  priceCurrency         String   @default("XOF")
+  searchQuotaMonthly    Int?
+  searchRadiusKm        Int
+  maxCompareItems       Int
+  maxWatchlistItems     Int
+  priceHistoryMonths    Int
+  csvExportEnabled      Boolean        @default(false)
+  csvExportMonthlyQuota Int?
+  multiCityLimit        Int
+  adsEnabled            Boolean        @default(true)
+  alertFrequency        AlertFrequency @default(NONE)
+  supportPriority       Int            @default(0)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id])
+  planId                 String
+  plan                   Plan               @relation(fields: [planId], references: [id])
+  status                 SubscriptionStatus @default(ACTIVE)
+  startedAt              DateTime           @default(now())
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([userId, status])
+}
+
+model Retailer {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  kind        RetailerKind @default(CHAIN)
+  /// Code ISO 3166-1 alpha-2 ; null pour un marchand en ligne international.
+  countryCode String?
+  websiteUrl  String?
+  logoUrl     String?
+  isActive    Boolean      @default(true)
+  /// Renseigné quand l'enseigne a été créée par un contributeur, pas par un scraper.
+  createdById String?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+
+  branches          StoreBranch[]
+  priceObservations PriceObservation[]
+
+  @@index([countryCode])
+}
+
+model StoreBranch {
+  id          String   @id @default(cuid())
+  retailerId  String
+  retailer    Retailer @relation(fields: [retailerId], references: [id])
+  name        String
+  address     String?
+  city        String
+  /// Code ISO 3166-1 alpha-2 du pays de la succursale.
+  countryCode String   @default("SN")
+  lat         Float?
+  lng         Float?
+  phoneNumber String?
+  /// Lien direct vers la boutique (page produit, fiche Google Maps, réseau social...).
+  storeUrl    String?
+  isActive    Boolean  @default(true)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+
+  priceObservations PriceObservation[]
+
+  @@index([city])
+  @@index([countryCode])
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  name           String
+  normalizedName String
+  category       ProductCategory @default(AUTRE)
+  unit           String?
+  unitValue      Float?
+  brand          String?
+  imageUrl       String?
+  qualityScore   Float?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  priceObservations PriceObservation[]
+  priceAlerts       PriceAlert[]
+
+  @@index([normalizedName])
+  @@index([category])
+}
+
+model PriceObservation {
+  id         String       @id @default(cuid())
+  productId  String
+  product    Product      @relation(fields: [productId], references: [id])
+  retailerId String
+  retailer   Retailer     @relation(fields: [retailerId], references: [id])
+  branchId   String?
+  branch     StoreBranch? @relation(fields: [branchId], references: [id])
+  /// Montant dans la plus petite unité de la devise (centimes pour EUR/USD,
+  /// franc entier pour XOF qui n'a pas de sous-unité). Voir lib/money.ts.
+  priceMinor Int
+  /// Code ISO 4217 (XOF, EUR, USD...).
+  currency   String       @default("XOF")
+  inStock    Boolean?     @default(true)
+  source     ObservationSource @default(SCRAPER)
+  rawTitle   String
+  /// Lien vers la page du produit chez le vendeur ; null pour un prix relevé
+  /// en boutique physique par un contributeur.
+  sourceUrl  String?
+  /// Contributeur ayant signalé ce prix (source USER_SUBMITTED).
+  submittedById String?
+  submittedBy   User?   @relation(fields: [submittedById], references: [id])
+  scrapedAt  DateTime
+  createdAt  DateTime     @default(now())
+
+  @@index([productId, scrapedAt])
+  @@index([retailerId, branchId])
+}
+
+model UsageLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  type      UsageType
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type, createdAt])
+}
+
+model PriceAlert {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  targetPriceMinor Int?
+  targetCurrency   String?
+  isActive        Boolean   @default(true)
+  lastNotifiedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model ScrapeRun {
+  id           String    @id @default(cuid())
+  retailerSlug String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  itemsScraped Int?
+  itemsMatched Int?
+  status       String
+  errorMessage String?
+}

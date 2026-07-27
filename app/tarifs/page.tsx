@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
+import { BoutonAbonnement } from "@/components/tarifs/BoutonAbonnement";
+import { auth } from "@/lib/auth";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
 import { formatMoney } from "@/lib/money";
 
@@ -11,7 +13,9 @@ const LABELS_FREQUENCE: Record<string, string> = {
   IMMEDIATE: "Immédiat (post-scraping)",
 };
 
-export default function TarifsPage() {
+export default async function TarifsPage() {
+  const session = await auth();
+  const connecte = Boolean(session?.user);
   return (
     <>
       <Header />
@@ -90,16 +94,23 @@ export default function TarifsPage() {
                   <li>Publicité : {plan.adsEnabled ? "Oui" : "Non"}</li>
                 </ul>
 
-                <Link
-                  href="/inscription"
-                  className={`mt-6 block rounded-xl px-4 py-2 text-center font-semibold transition-all active:scale-95 ${
-                    misEnAvant
-                      ? "bg-primary-container text-white primary-glow"
-                      : "border border-white/10 text-on-surface-variant hover:bg-surface-container"
-                  }`}
-                >
-                  {plan.priceMinor === 0 ? "Commencer" : "Choisir ce palier"}
-                </Link>
+                <div className="mt-6">
+                  {plan.priceMinor === 0 ? (
+                    <Link
+                      href="/inscription"
+                      className="block rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-on-surface transition-colors hover:bg-white/5"
+                    >
+                      Commencer
+                    </Link>
+                  ) : (
+                    <BoutonAbonnement
+                      planCode={code as "START" | "STANDARD" | "GROWTH"}
+                      libelle="Choisir ce palier"
+                      misEnAvant={misEnAvant}
+                      connecte={connecte}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
@@ -109,9 +120,9 @@ export default function TarifsPage() {
           « Immédiat » reste borné par la cadence du scraping (toutes les
           6 à 12 heures). La distinction entre paliers porte sur la fréquence
           de notification, pas sur la fraîcheur des données sous-jacentes,
-          identique pour tous les utilisateurs. Le paiement en ligne n&apos;est
-          pas encore actif — l&apos;inscription vous place automatiquement sur
-          le palier Gratuit.
+          identique pour tous les utilisateurs. Les paiements sont traités par
+          PayTech (Orange Money, Wave, Free Money, carte bancaire) ; votre
+          palier s&apos;active dès confirmation de la transaction.
         </p>
       </main>
     </>

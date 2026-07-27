@@ -15,6 +15,11 @@ import { prisma } from "@/lib/db";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // Sur un hébergeur sans serveur (Netlify, Vercel), la requête arrive via un
+  // proxy : sans cette autorisation explicite, Auth.js refuse de déduire l'URL
+  // du site et renvoie la page « Server error / problem with the server
+  // configuration ». En local, l'hôte est de toute façon de confiance.
+  trustHost: true,
   pages: {
     signIn: "/connexion",
   },

@@ -1,4 +1,4 @@
-import { Plan, PlanCode, SubscriptionStatus, UsageType } from "@prisma/client";
+import { Plan, PlanCode, Role, SubscriptionStatus, UsageType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 /**
@@ -18,12 +18,33 @@ export type QuotaCheckResult =
       planCode: PlanCode;
     };
 
+/** Vrai pour un compte administrateur (fondateur) : aucun quota, aucun paiement. */
+export async function estAdministrateur(userId: string): Promise<boolean> {
+  const utilisateur = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  return utilisateur?.role === Role.ADMIN;
+}
+
 /**
  * Résout le palier effectif d'un utilisateur. Un abonnement expiré/annulé
  * (au-delà de currentPeriodEnd) retombe automatiquement sur FREE au moment
  * de la lecture, sans attendre le job de ménage quotidien.
+ *
+ * Un administrateur reçoit le palier le plus élevé sans abonnement : le
+ * fondateur ne paie pas et n'est pas limité.
  */
 export async function getUserPlan(userId: string): Promise<Plan> {
+  if (await estAdministrateur(userId)) {
+    const planAdmin = await prisma.plan.findUnique({ where: { code: PlanCode.GROWTH } });
+    if (planAdmin) {
+      // Quota mensuel illimité : le plafond anti-abus du palier Growth ne
+      // s'applique pas au compte fondateur.
+      return { ...planAdmin, name: "Fondateur", searchQuotaMonthly: null };
+    }
+  }
+
   const subscription = await prisma.subscription.findFirst({
     where: {
       userId,

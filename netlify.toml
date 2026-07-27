@@ -1,0 +1,12 @@
+[build]
+  command = "prisma generate && next build"
+  publish = ".next"
+
+[build.environment]
+  # Prisma a besoin de savoir qu'il tourne sur une plateforme sans serveur.
+  PRISMA_CLIENT_ENGINE_TYPE = "library"
+
+# Le plugin officiel adapte le rendu Next.js (App Router, routes dynamiques,
+# fonctions serveur) au runtime Netlify.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

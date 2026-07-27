@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { estAdministrateur } from "@/lib/quota";
 
 export async function Header() {
   const session = await auth();
   const initiale = session?.user?.name?.charAt(0)?.toUpperCase() ?? "?";
+  // La Console fondateur n'apparaît que pour un compte administrateur.
+  const admin = session?.user?.id ? await estAdministrateur(session.user.id) : false;
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-surface/70 backdrop-blur-xl">
@@ -26,6 +29,15 @@ export async function Header() {
               <Link href="/compte" className="transition-colors hover:text-primary">
                 Compte
               </Link>
+              {admin && (
+                <Link
+                  href="/console"
+                  className="flex items-center gap-1.5 rounded-full border border-tertiary/30 bg-tertiary/10 px-3 py-1.5 text-tertiary transition-colors hover:bg-tertiary/20"
+                >
+                  <span className="material-symbols-outlined text-[16px]">shield_person</span>
+                  Console fondateur
+                </Link>
+              )}
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-primary/15 text-sm font-semibold text-primary">
                   {initiale}

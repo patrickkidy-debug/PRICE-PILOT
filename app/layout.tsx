@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Price Pilot — Comparateur de prix au Sénégal",
+  title: "PricePilot — Trouvez le meilleur prix, où que vous soyez",
   description:
-    "Trouvez le prix le moins cher ou le meilleur rapport qualité-prix près de chez vous, à Dakar et au Sénégal.",
+    "Le même produit peut coûter beaucoup moins cher ailleurs. PricePilot compare les prix réels sur le web et vous ramène la meilleure offre en quelques secondes.",
 };
 
 export default function RootLayout({

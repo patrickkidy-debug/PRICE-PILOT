@@ -29,12 +29,21 @@ export async function POST(request: Request) {
 
   let userId: string | undefined;
   let planCode: string | undefined;
+  let application: string | undefined;
   try {
     const champs = JSON.parse(ipn.custom_field ?? "{}") as Record<string, string>;
+    application = champs.app;
     userId = champs.userId;
     planCode = champs.planCode;
   } catch {
     // custom_field illisible : on ne devine pas à qui attribuer le paiement.
+  }
+
+  // Un même compte PayTech peut encaisser pour plusieurs produits : ils
+  // partagent alors la même clé secrète, donc la signature seule ne suffit pas
+  // à distinguer l'origine. On ignore poliment ce qui ne vient pas de PricePilot.
+  if (application !== "pricepilot") {
+    return NextResponse.json({ recu: true, ignore: "autre application" });
   }
 
   if (!userId || !planCode) {

@@ -53,7 +53,9 @@ export async function POST(request: Request) {
       nomArticle: `PricePilot ${plan.name} — 1 mois`,
       montant: minorToMajor(plan.priceMinor, plan.priceCurrency),
       devise: plan.priceCurrency,
-      champPersonnalise: { userId: session.user.id, planCode: plan.code },
+      // `app` identifie PricePilot : le compte PayTech peut servir plusieurs
+      // produits, et l'IPN rejette toute notification qui ne vient pas d'ici.
+      champPersonnalise: { app: "pricepilot", userId: session.user.id, planCode: plan.code },
     });
 
     return NextResponse.json({ token, urlRedirection, refCommande });

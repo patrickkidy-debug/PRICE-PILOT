@@ -30,7 +30,7 @@ export default function ConnexionPage() {
       return;
     }
 
-    router.push("/recherche");
+    router.push("/assistant");
     router.refresh();
   }
 

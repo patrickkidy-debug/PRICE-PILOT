@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ObservationSource, UsageType } from "@prisma/client";
+import { UsageType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { estAdministrateur } from "@/lib/quota";
@@ -23,36 +23,21 @@ export default async function ConsolePage() {
     utilisateurs,
     nouveauxCeMois,
     recherchesCeMois,
-    contributions,
-    produits,
-    enseignes,
+
     abonnementsActifs,
-    dernieresContributions,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { createdAt: { gte: debutDuMois } } }),
     prisma.usageLog.count({
       where: { type: UsageType.SEARCH, createdAt: { gte: debutDuMois } },
     }),
-    prisma.priceObservation.count({
-      where: { source: ObservationSource.USER_SUBMITTED },
-    }),
-    prisma.product.count(),
-    prisma.retailer.count(),
+
     prisma.subscription.count({ where: { status: "ACTIVE" } }),
-    prisma.priceObservation.findMany({
-      where: { source: ObservationSource.USER_SUBMITTED },
-      include: { product: true, retailer: true, submittedBy: true },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    }),
   ]);
 
   const indicateurs = [
     { icone: "group", libelle: "Comptes", valeur: utilisateurs, detail: `${nouveauxCeMois} ce mois-ci` },
     { icone: "search", libelle: "Recherches ce mois", valeur: recherchesCeMois, detail: "toutes sources" },
-    { icone: "storefront", libelle: "Vendeurs référencés", valeur: enseignes, detail: `${produits} produits` },
-    { icone: "volunteer_activism", libelle: "Prix communautaires", valeur: contributions, detail: "signalés par les utilisateurs" },
   ];
 
   return (
@@ -84,39 +69,6 @@ export default async function ConsolePage() {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <div className="glass-card rounded-2xl p-6 lg:col-span-2">
-            <h2 className="mb-4 text-lg font-semibold text-on-surface">
-              Derniers prix signalés par la communauté
-            </h2>
-            {dernieresContributions.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">
-                Aucun signalement pour l&apos;instant.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {dernieresContributions.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-start justify-between gap-4 border-b border-white/5 pb-3 last:border-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-on-surface">
-                        {c.product.name}
-                      </p>
-                      <p className="text-xs text-on-surface-variant">
-                        {c.retailer.name}
-                        {c.submittedBy?.email ? ` · ${c.submittedBy.email}` : ""}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold text-primary">
-                      {new Intl.NumberFormat("fr-FR").format(c.priceMinor)} {c.currency}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
           <div className="glass-card rounded-2xl p-6">
             <h2 className="mb-4 text-lg font-semibold text-on-surface">Abonnements</h2>
             <p className="text-3xl font-bold text-on-surface">{abonnementsActifs}</p>

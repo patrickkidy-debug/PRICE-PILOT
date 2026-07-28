@@ -3,7 +3,6 @@ import { Plan, UsageType } from "@prisma/client";
 import { getAnthropicClient } from "@/lib/ai/client";
 import { PRICEPILOT_SYSTEM_PROMPT } from "@/lib/ai/systemPrompt";
 import { checkMonthlyQuota, logUsage } from "@/lib/quota";
-import { rechercherProduits } from "@/lib/search";
 import {
   RechercheIndisponibleError,
   rechercherSurLeWeb,
@@ -14,13 +13,17 @@ import { trouverPays } from "@/lib/countries";
 
 /**
  * Modèle Claude utilisé pour raisonner et rédiger la comparaison.
- * Coût indicatif : claude-opus-5 est facturé 5 $ / 25 $ par million de tokens.
- * Pour diviser la facture par cinq, remplacer par "claude-haiku-4-5"
- * (1 $ / 5 $ par million) — c'est la seule ligne à changer.
+ *
+ * Haiku 4.5 est retenu pour la vitesse : mesuré sur une même synthèse,
+ * claude-opus-5 met 22 s là où Haiku met 3,8 s — près de six fois plus rapide,
+ * et cinq fois moins cher (1 $ / 5 $ contre 5 $ / 25 $ par million de tokens).
+ * Comme la boucle enchaîne plusieurs appels, l'écart se multiplie d'autant.
+ * Repasser à "claude-opus-5" ici si l'on privilégie la finesse d'analyse à la
+ * réactivité.
  */
-const MODEL = "claude-opus-5";
-const MAX_TOURS = 6;
-const MAX_RECHERCHES_WEB = 5;
+const MODEL = "claude-haiku-4-5";
+const MAX_TOURS = 4;
+const MAX_RECHERCHES_WEB = 4;
 
 export interface SourceCitee {
   url: string;
@@ -31,8 +34,6 @@ export interface AssistantContext {
   userId: string;
   plan: Plan;
   localisation: LocalisationDetectee;
-  lat: number | null;
-  lng: number | null;
 }
 
 export interface AssistantTurnResult {
@@ -61,37 +62,6 @@ const OUTIL_RECHERCHE_WEB: Anthropic.Tool = {
     required: ["requete"],
   },
 };
-
-const OUTIL_BASE_LOCALE: Anthropic.Tool = {
-  name: "rechercher_base_pricepilot",
-  description:
-    "Recherche dans la base PricePilot : prix signalés par la communauté, notamment ceux de petits commerçants et boutiques de quartier sans présence en ligne, introuvables par recherche web. À utiliser EN PLUS de rechercher_web pour les produits du quotidien.",
-  input_schema: {
-    type: "object",
-    properties: {
-      requete: { type: "string", description: "Description du produit recherché." },
-    },
-    required: ["requete"],
-  },
-};
-
-async function executerRechercheLocale(input: unknown, ctx: AssistantContext) {
-  const args = (input ?? {}) as { requete?: unknown };
-  const requete = typeof args.requete === "string" ? args.requete : "";
-  if (!requete || ctx.lat == null || ctx.lng == null || !ctx.localisation.countryCode) {
-    return { resultats: [], note: "Base locale non interrogeable (position inconnue)." };
-  }
-
-  const resultats = await rechercherProduits({
-    query: requete,
-    tri: "moins_cher",
-    lat: ctx.lat,
-    lng: ctx.lng,
-    countryCode: ctx.localisation.countryCode,
-    plan: ctx.plan,
-  });
-  return { resultats };
-}
 
 function contexteLocalisation(localisation: LocalisationDetectee): string {
   const pays = localisation.countryCode
@@ -146,7 +116,7 @@ export async function runAssistantTurn(
         },
         { type: "text", text: contexteLocalisation(ctx.localisation) },
       ],
-      tools: [OUTIL_RECHERCHE_WEB, OUTIL_BASE_LOCALE],
+      tools: [OUTIL_RECHERCHE_WEB],
       messages: history,
     });
 
@@ -183,51 +153,60 @@ export async function runAssistantTurn(
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
     );
 
-    const resultats: Anthropic.ToolResultBlockParam[] = [];
-    for (const appel of appels) {
-      let charge: unknown;
-      let enErreur = false;
+    // Les recherches d'un même tour partent EN PARALLÈLE : exécutées l'une
+    // après l'autre, trois recherches coûtaient trois fois 1,5 s.
+    const budgetRestant = MAX_RECHERCHES_WEB - recherchesWeb;
+    let quotaWebEpuise = false;
 
-      if (appel.name === "rechercher_web") {
-        if (recherchesWeb >= MAX_RECHERCHES_WEB) {
-          charge = { erreur: "Nombre maximal de recherches atteint pour ce message." };
-          enErreur = true;
-        } else {
-          const args = (appel.input ?? {}) as { requete?: unknown };
-          const requete = typeof args.requete === "string" ? args.requete : "";
-          try {
-            const { resultats: pages } = await rechercherSurLeWeb(requete);
-            recherchesWeb += 1;
-            enregistrerSources(pages, sources);
-            charge = { resultats: pages };
-          } catch (erreur) {
-            if (erreur instanceof RechercheIndisponibleError && erreur.quotaEpuise) {
-              return {
-                messages: history,
-                reponse:
-                  "Le quota gratuit de recherches web est épuisé pour le moment. Réessayez un peu plus tard — aucun frais ne vous sera facturé.",
-                sources,
-                recherchesWeb,
-                quotaGratuitEpuise: true,
-                rechercheIndisponible: null,
-              };
-            }
-            derniereErreurRecherche =
-              erreur instanceof Error ? erreur.message : "Recherche web indisponible.";
-            charge = { erreur: derniereErreurRecherche };
-            enErreur = true;
-          }
+    const resultats: Anthropic.ToolResultBlockParam[] = await Promise.all(
+      appels.map(async (appel, index): Promise<Anthropic.ToolResultBlockParam> => {
+        const echec = (message: string): Anthropic.ToolResultBlockParam => ({
+          type: "tool_result",
+          tool_use_id: appel.id,
+          content: JSON.stringify({ erreur: message }),
+          is_error: true,
+        });
+
+        if (appel.name !== "rechercher_web") {
+          return echec(`Outil inconnu : ${appel.name}`);
         }
-      } else {
-        charge = await executerRechercheLocale(appel.input, ctx);
-      }
+        if (index >= budgetRestant) {
+          return echec("Nombre maximal de recherches atteint pour ce message.");
+        }
 
-      resultats.push({
-        type: "tool_result",
-        tool_use_id: appel.id,
-        content: JSON.stringify(charge),
-        is_error: enErreur,
-      });
+        const args = (appel.input ?? {}) as { requete?: unknown };
+        const requete = typeof args.requete === "string" ? args.requete : "";
+
+        try {
+          const { resultats: pages } = await rechercherSurLeWeb(requete);
+          recherchesWeb += 1;
+          enregistrerSources(pages, sources);
+          return {
+            type: "tool_result",
+            tool_use_id: appel.id,
+            content: JSON.stringify({ resultats: pages }),
+          };
+        } catch (erreur) {
+          if (erreur instanceof RechercheIndisponibleError && erreur.quotaEpuise) {
+            quotaWebEpuise = true;
+          }
+          derniereErreurRecherche =
+            erreur instanceof Error ? erreur.message : "Recherche web indisponible.";
+          return echec(derniereErreurRecherche);
+        }
+      }),
+    );
+
+    if (quotaWebEpuise) {
+      return {
+        messages: history,
+        reponse:
+          "Le quota gratuit de recherches web est épuisé pour le moment. Réessayez un peu plus tard — aucun frais ne vous sera facturé.",
+        sources,
+        recherchesWeb,
+        quotaGratuitEpuise: true,
+        rechercheIndisponible: null,
+      };
     }
 
     if (!quotaConsomme) {

@@ -6,7 +6,6 @@ import { getUserPlan } from "@/lib/quota";
 import { isAssistantConfigured } from "@/lib/ai/client";
 import { runAssistantTurn } from "@/lib/ai/assistant";
 import { detecterLocalisation } from "@/lib/geolocation";
-import { trouverPays } from "@/lib/countries";
 
 const assistantSchema = z.object({
   texte: z.string().min(1, "Le message ne peut pas être vide."),
@@ -50,10 +49,6 @@ export async function POST(request: Request) {
   const localisation = detecterLocalisation(request.headers, timezone);
   const plan = await getUserPlan(session.user.id);
 
-  // Coordonnées approximatives, utilisées seulement pour interroger la base
-  // locale des contributions communautaires.
-  const pays = localisation.countryCode ? trouverPays(localisation.countryCode) : undefined;
-  const villeReference = pays?.villes[0] ?? null;
 
   try {
     const messages: Anthropic.MessageParam[] = [
@@ -65,8 +60,6 @@ export async function POST(request: Request) {
       userId: session.user.id,
       plan,
       localisation,
-      lat: villeReference?.lat ?? null,
-      lng: villeReference?.lng ?? null,
     });
 
     return NextResponse.json({

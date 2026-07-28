@@ -1,8 +1,7 @@
 /**
- * Pays couverts par PricePilot. L'architecture est multi-pays : ajouter un
- * marché consiste à ajouter une entrée ici (+ des données), pas à modifier le
- * code. Le catalogue réellement alimenté aujourd'hui reste le Sénégal — les
- * autres pays sont ouverts aux contributions communautaires (/contribuer).
+ * Pays couverts par PricePilot, avec leur devise et leurs villes de référence.
+ * Sert à localiser les recherches et à formater les montants. Ajouter un marché
+ * consiste à ajouter une entrée ici, sans toucher au code.
  */
 
 export interface Ville {

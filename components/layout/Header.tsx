@@ -19,12 +19,6 @@ export async function Header() {
               <Link href="/assistant" className="transition-colors hover:text-primary">
                 Assistant
               </Link>
-              <Link href="/recherche" className="hidden transition-colors hover:text-primary sm:block">
-                Base locale
-              </Link>
-              <Link href="/contribuer" className="hidden transition-colors hover:text-primary sm:block">
-                Signaler un prix
-              </Link>
               <Link href="/compte" className="transition-colors hover:text-primary">
                 Compte
               </Link>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const inter = Inter({
@@ -29,6 +30,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-on-surface antialiased">
         <SessionProvider>{children}</SessionProvider>
+        {/* Widget de paiement KkiaPay : chargé après l'affichage pour ne pas
+            retarder le rendu, et disponible sur toute page proposant un palier. */}
+        <Script src="https://cdn.kkiapay.me/k.js" strategy="lazyOnload" />
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { BoutonAbonnement } from "@/components/tarifs/BoutonAbonnement";
 import { auth } from "@/lib/auth";
 import { PLAN_DEFINITIONS } from "@/lib/plans";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, minorToMajor } from "@/lib/money";
 
 const ORDRE = ["FREE", "START", "STANDARD", "GROWTH"] as const;
 
@@ -16,6 +16,8 @@ const LABELS_FREQUENCE: Record<string, string> = {
 export default async function TarifsPage() {
   const session = await auth();
   const connecte = Boolean(session?.user);
+  const clePublique = process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY ?? "";
+  const bacASable = process.env.KKIAPAY_SANDBOX === "true";
 
   return (
     <div className="min-h-screen bg-[#0d0e12] text-white">
@@ -116,6 +118,9 @@ export default async function TarifsPage() {
                       libelle="Choisir ce palier"
                       misEnAvant={misEnAvant}
                       connecte={connecte}
+                      montant={minorToMajor(plan.priceMinor, plan.priceCurrency)}
+                      clePublique={clePublique}
+                      bacASable={bacASable}
                     />
                   )}
                 </div>

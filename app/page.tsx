@@ -69,9 +69,8 @@ export default async function AccueilPage() {
             </h1>
 
             <p className="max-w-xl text-base sm:text-lg leading-relaxed text-slate-300 mx-auto md:mx-0">
-              PricePilot part chercher les prix réels sur les sites marchands,
-              lit les vraies pages produit et vous ramène la meilleure offre —
-              avec le lien pour acheter. Votre pays est détecté automatiquement.
+              Le même produit peut coûter beaucoup moins cher ailleurs.
+              PricePilot trouve le meilleur prix pour vous en quelques secondes.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">

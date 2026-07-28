@@ -44,6 +44,12 @@ export interface AssistantTurnResult {
   quotaGratuitEpuise: boolean;
   /** Renseigné quand le moteur de recherche est inaccessible (blocage, panne). */
   rechercheIndisponible: string | null;
+  /**
+   * Vrai quand l'utilisateur a consommé le quota de recherches de son palier.
+   * L'interface s'en sert pour l'amener au paiement plutôt que de lui afficher
+   * un simple refus.
+   */
+  quotaAtteint: boolean;
 }
 
 const OUTIL_RECHERCHE_WEB: Anthropic.Tool = {
@@ -92,6 +98,7 @@ export async function runAssistantTurn(
       recherchesWeb: 0,
       quotaGratuitEpuise: false,
       rechercheIndisponible: null,
+      quotaAtteint: true,
     };
   }
 
@@ -131,6 +138,7 @@ export async function runAssistantTurn(
         recherchesWeb,
         quotaGratuitEpuise: false,
         rechercheIndisponible: null,
+        quotaAtteint: false,
       };
     }
 
@@ -146,6 +154,7 @@ export async function runAssistantTurn(
         recherchesWeb,
         quotaGratuitEpuise: false,
         rechercheIndisponible: recherchesWeb === 0 ? derniereErreurRecherche : null,
+        quotaAtteint: false,
       };
     }
 
@@ -206,6 +215,7 @@ export async function runAssistantTurn(
         recherchesWeb,
         quotaGratuitEpuise: true,
         rechercheIndisponible: null,
+        quotaAtteint: false,
       };
     }
 
@@ -225,6 +235,7 @@ export async function runAssistantTurn(
     recherchesWeb,
     quotaGratuitEpuise: false,
     rechercheIndisponible: recherchesWeb === 0 ? derniereErreurRecherche : null,
+    quotaAtteint: false,
   };
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { evenementPixel } from "@/lib/pixel";
 
 interface Props {
@@ -34,6 +34,8 @@ export function BoutonAbonnement({
   bacASable,
 }: Props) {
   const router = useRouter();
+  const ouvertureAuto = useSearchParams().get("plan") === planCode;
+  const autoLanceRef = useRef(false);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   // Le widget est partagé par tous les boutons de la page : sans ce drapeau,
@@ -86,7 +88,7 @@ export function BoutonAbonnement({
     window.addFailedListener?.(echec);
   }, [confirmerPaiement]);
 
-  function souscrire() {
+  const souscrire = useCallback(() => {
     if (!connecte) {
       router.push("/inscription");
       return;
@@ -108,7 +110,29 @@ export function BoutonAbonnement({
       paymentmethod: "momo,card",
       data: JSON.stringify({ app: "pricepilot", planCode }),
     });
-  }
+  }, [connecte, router, montant, planCode, clePublique, bacASable]);
+
+  // Arrivée depuis l'assistant avec le quota épuisé (`/tarifs?plan=STANDARD`) :
+  // le widget de paiement s'ouvre seul, sans clic supplémentaire.
+  useEffect(() => {
+    if (!ouvertureAuto || autoLanceRef.current || !connecte) return;
+
+    // Le script KkiaPay est chargé en différé pour ne pas retarder l'affichage :
+    // on attend qu'il soit disponible au lieu d'échouer au premier rendu.
+    const debut = Date.now();
+    const minuteur = setInterval(() => {
+      if (window.openKkiapayWidget) {
+        clearInterval(minuteur);
+        autoLanceRef.current = true;
+        souscrire();
+      } else if (Date.now() - debut > 15_000) {
+        clearInterval(minuteur);
+        setErreur("Le module de paiement n'a pas pu être chargé. Rechargez la page.");
+      }
+    }, 300);
+
+    return () => clearInterval(minuteur);
+  }, [ouvertureAuto, connecte, souscrire]);
 
   return (
     <div>

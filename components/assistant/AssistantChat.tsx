@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useRouter } from "next/navigation";
 import { evenementPixel } from "@/lib/pixel";
 
 interface SourceCitee {
@@ -26,6 +27,7 @@ const SUGGESTIONS = [
 ];
 
 export function AssistantChat() {
+  const router = useRouter();
   const [messages, setMessages] = useState<MessageAffiche[]>([]);
   const [historique, setHistorique] = useState<unknown[]>([]);
   const [saisie, setSaisie] = useState("");
@@ -58,6 +60,14 @@ export function AssistantChat() {
 
     if (!response.ok) {
       setErreur(data.error ?? "Une erreur est survenue.");
+      return;
+    }
+
+    // Quota épuisé : on n'affiche pas un refus sec, on emmène directement
+    // l'utilisateur au paiement de l'abonnement Standard, qui s'ouvre seul.
+    if (data.quotaAtteint) {
+      setMessages((prev) => [...prev, { role: "assistant", texte: data.reponse }]);
+      router.push("/tarifs?plan=STANDARD");
       return;
     }
 

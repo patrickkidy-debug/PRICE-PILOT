@@ -68,6 +68,7 @@ export async function POST(request: Request) {
       recherchesWeb: resultat.recherchesWeb,
       historique: resultat.messages,
       quotaGratuitEpuise: resultat.quotaGratuitEpuise,
+      quotaAtteint: resultat.quotaAtteint,
       rechercheIndisponible: resultat.rechercheIndisponible,
       localisation: { pays: localisation.countryCode, ville: localisation.city },
     });

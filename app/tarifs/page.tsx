@@ -44,13 +44,13 @@ export default async function TarifsPage() {
                 key={code}
                 className={`glass-card flex flex-col rounded-3xl p-6 sm:p-8 border transition-all ${
                   misEnAvant
-                    ? "relative z-10 border-primary bg-surface-container-high/90 shadow-2xl shadow-primary/25 scale-[1.02]"
-                    : "border-white/10 hover:border-white/20"
+                    ? "relative z-10 border-2 border-primary bg-surface-container-high/90 shadow-2xl shadow-primary/40 ring-4 ring-primary/20 lg:scale-105 lg:-my-2"
+                    : "border-white/10 opacity-90 hover:opacity-100 hover:border-white/20"
                 }`}
               >
                 {misEnAvant && (
                   <span className="mb-4 self-start rounded-full bg-primary px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-white shadow-md">
-                    Le plus populaire
+                    Recommandé
                   </span>
                 )}
                 <h2 className="text-xl font-bold text-white">{plan.name}</h2>

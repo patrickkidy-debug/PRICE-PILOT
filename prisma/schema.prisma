@@ -8,6 +8,9 @@ datasource db {
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
+  // Netlify exécute les fonctions sur Amazon Linux : sans ce binaire, le moteur
+  // Prisma généré sur la machine de build ne démarre pas en production.
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
 }
 
 enum Role {

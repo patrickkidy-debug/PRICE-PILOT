@@ -21,16 +21,28 @@ export default function InscriptionPage() {
     setChargement(true);
     setEtape("Création de votre compte…");
 
-    const response = await fetch("/api/inscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
+    let response: Response;
+    try {
+      response = await fetch("/api/inscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+    } catch {
+      setChargement(false);
+      setErreur("Serveur injoignable. Vérifiez votre connexion et réessayez.");
+      return;
+    }
 
     if (!response.ok) {
-      const data = await response.json();
-      setErreur(data.error ?? "Une erreur est survenue.");
+      // Une erreur serveur peut renvoyer un corps vide ou une page HTML : lire
+      // le JSON sans filet laissait le bouton tourner indéfiniment, sans message.
+      const data = await response.json().catch(() => null);
       setChargement(false);
+      setErreur(
+        data?.error ??
+          `Le serveur a répondu une erreur ${response.status}. Réessayez dans un instant.`,
+      );
       return;
     }
 

@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
-import { estAdministrateur } from "@/lib/quota";
 
 export async function Header() {
   const session = await auth();
   const initiale = session?.user?.name?.charAt(0)?.toUpperCase() ?? "?";
-  // La Console fondateur n'apparaît que pour un compte administrateur.
-  const admin = session?.user?.id ? await estAdministrateur(session.user.id) : false;
+  // Le rôle vient du jeton de session : aucune requête en base à chaque rendu.
+  const admin = session?.user?.role === "ADMIN";
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-surface/70 backdrop-blur-xl">

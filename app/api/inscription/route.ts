@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { PlanCode } from "@prisma/client";
+import { PlanCode, Prisma } from "@prisma/client";
 
 const inscriptionSchema = z.object({
   name: z.string().min(1, "Le nom est requis."),
@@ -23,33 +23,44 @@ export async function POST(request: Request) {
 
   const { name, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json(
-      { error: "Un compte existe déjà avec cet email." },
-      { status: 409 },
-    );
-  }
-
   const passwordHash = await bcrypt.hash(password, 10);
-  const freePlan = await prisma.plan.findUnique({ where: { code: PlanCode.FREE } });
-  if (!freePlan) {
-    return NextResponse.json(
-      { error: "Configuration serveur incomplète (paliers non initialisés)." },
-      { status: 500 },
-    );
-  }
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      passwordHash,
-      subscriptions: {
-        create: { planId: freePlan.id },
+  // Une seule requête au lieu de trois. La base étant distante (~800 ms par
+  // aller-retour), chaque requête évitée se voit directement à l'inscription :
+  //  - l'email déjà pris est détecté par la contrainte d'unicité (P2002) au
+  //    lieu d'un findUnique préalable ;
+  //  - le palier Gratuit est rattaché par son code unique via `connect`, ce qui
+  //    évite d'aller le chercher d'abord.
+  try {
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        subscriptions: {
+          create: { plan: { connect: { code: PlanCode.FREE } } },
+        },
       },
-    },
-  });
+      select: { id: true, email: true },
+    });
 
-  return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+    return NextResponse.json(user, { status: 201 });
+  } catch (erreur) {
+    if (erreur instanceof Prisma.PrismaClientKnownRequestError) {
+      if (erreur.code === "P2002") {
+        return NextResponse.json(
+          { error: "Un compte existe déjà avec cet email." },
+          { status: 409 },
+        );
+      }
+      // P2025 : le palier Gratuit n'existe pas — la base n'a pas été semée.
+      if (erreur.code === "P2025") {
+        return NextResponse.json(
+          { error: "Configuration serveur incomplète (paliers non initialisés)." },
+          { status: 500 },
+        );
+      }
+    }
+    throw erreur;
+  }
 }

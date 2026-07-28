@@ -12,11 +12,14 @@ export default function InscriptionPage() {
   const [password, setPassword] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
+  // La base est distante : sans indication d'étape, l'écran paraît figé.
+  const [etape, setEtape] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErreur(null);
     setChargement(true);
+    setEtape("Création de votre compte…");
 
     const response = await fetch("/api/inscription", {
       method: "POST",
@@ -31,15 +34,19 @@ export default function InscriptionPage() {
       return;
     }
 
+    setEtape("Connexion…");
     const result = await signIn("credentials", { email, password, redirect: false });
-    setChargement(false);
 
     if (result?.error) {
+      setChargement(false);
       router.push("/connexion");
       return;
     }
 
-    router.push("/recherche");
+    setEtape("Ouverture de votre espace…");
+    // On laisse le bouton en attente jusqu'à l'affichage de la page suivante :
+    // remettre `chargement` à false ici ferait clignoter le formulaire.
+    router.push("/assistant");
     router.refresh();
   }
 
@@ -98,9 +105,14 @@ export default function InscriptionPage() {
           <button
             type="submit"
             disabled={chargement}
-            className="w-full rounded-xl bg-primary-container px-4 py-2.5 font-semibold text-white primary-glow transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-2.5 font-semibold text-white primary-glow transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60"
           >
-            {chargement ? "Création en cours..." : "Créer mon compte"}
+            {chargement && (
+              <span className="material-symbols-outlined animate-spin text-[18px]">
+                progress_activity
+              </span>
+            )}
+            {chargement ? etape : "Créer mon compte"}
           </button>
         </form>
         <p className="mt-4 text-sm text-on-surface-variant">

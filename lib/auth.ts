@@ -37,7 +37,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          // On ne rapatrie que le strict nécessaire : la base est distante,
+          // chaque colonne inutile coûte de la latence.
+          select: { id: true, email: true, name: true, role: true, passwordHash: true },
+        });
         if (!user?.passwordHash) {
           return null;
         }
@@ -47,7 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],
@@ -55,12 +60,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user?.id) {
         token.userId = user.id;
+        // Le rôle voyage dans le jeton : sans cela, chaque rendu de page
+        // authentifiée relançait une requête en base juste pour savoir si
+        // l'utilisateur est administrateur.
+        token.role = (user as { role?: string }).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && typeof token.userId === "string") {
         session.user.id = token.userId;
+        session.user.role = typeof token.role === "string" ? token.role : "USER";
       }
       return session;
     },

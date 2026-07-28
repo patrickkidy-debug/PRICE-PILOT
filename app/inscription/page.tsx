@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ChampMotDePasse } from "@/components/ui/ChampMotDePasse";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -107,15 +108,13 @@ export default function InscriptionPage() {
             <label htmlFor="password" className="block text-sm font-semibold text-slate-200">
               Mot de passe
             </label>
-            <input
+            <ChampMotDePasse
               id="password"
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              valeur={password}
+              onChange={setPassword}
+              longueurMinimale={8}
               placeholder="Au moins 8 caractères"
+              autoComplete="new-password"
             />
           </div>
           {erreur && <p className="text-sm font-medium text-rose-400">{erreur}</p>}

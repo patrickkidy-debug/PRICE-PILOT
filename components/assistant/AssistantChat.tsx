@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { evenementPixel } from "@/lib/pixel";
 
 interface SourceCitee {
   url: string;
@@ -59,6 +60,10 @@ export function AssistantChat() {
       setErreur(data.error ?? "Une erreur est survenue.");
       return;
     }
+
+    // Recherche aboutie : signal d'intention d'achat, utile pour construire
+    // des audiences Meta et optimiser la diffusion des publicités.
+    evenementPixel("Search", { search_string: texte });
 
     setHistorique(data.historique ?? []);
     if (data.localisation?.pays) {

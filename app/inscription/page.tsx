@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChampMotDePasse } from "@/components/ui/ChampMotDePasse";
+import { evenementPixel } from "@/lib/pixel";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -43,6 +44,11 @@ export default function InscriptionPage() {
       );
       return;
     }
+
+    // Compte validé côté serveur : c'est la conversion à optimiser dans les
+    // campagnes Meta, envoyée avant la connexion pour ne rien perdre si la
+    // redirection échoue.
+    evenementPixel("CompleteRegistration");
 
     setEtape("Connexion…");
     const result = await signIn("credentials", { email, password, redirect: false });

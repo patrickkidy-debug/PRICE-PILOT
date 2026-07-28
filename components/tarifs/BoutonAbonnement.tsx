@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { evenementPixel } from "@/lib/pixel";
 
 interface Props {
   planCode: "START" | "STANDARD" | "GROWTH";
@@ -58,10 +59,14 @@ export function BoutonAbonnement({
         return;
       }
 
+      // Achat confirmé par le serveur, jamais par le navigateur seul : le
+      // pixel ne compte donc que des paiements réellement encaissés.
+      evenementPixel("Purchase", { value: montant, currency: "XOF", content_name: planCode });
+
       router.push("/paiement/succes");
       router.refresh();
     },
-    [planCode, router],
+    [planCode, montant, router],
   );
 
   useEffect(() => {
@@ -93,6 +98,7 @@ export function BoutonAbonnement({
 
     setErreur(null);
     attenteRef.current = true;
+    evenementPixel("InitiateCheckout", { value: montant, currency: "XOF", content_name: planCode });
     window.openKkiapayWidget({
       amount: montant,
       key: clePublique,

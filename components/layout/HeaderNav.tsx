@@ -19,7 +19,7 @@ export function HeaderNav({ sessionUser, signOutAction }: HeaderNavProps) {
 
   return (
     <>
-      {/* Desktop Navigation */}
+      {/* Navigation Desktop */}
       <div className="hidden md:flex md:items-center md:gap-6 text-sm text-slate-200">
         {sessionUser ? (
           <>
@@ -34,7 +34,9 @@ export function HeaderNav({ sessionUser, signOutAction }: HeaderNavProps) {
                 href="/console"
                 className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
               >
-                <span className="material-symbols-outlined text-[16px]">shield_person</span>
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 10c-2.33 0-4.32-1.45-5.12-3.5.03-.68 2.05-1.8 5.12-1.8 3.06 0 5.09 1.12 5.12 1.8-.8 2.05-2.79 3.5-5.12 3.5z"/>
+                </svg>
                 Console fondateur
               </Link>
             )}
@@ -67,21 +69,27 @@ export function HeaderNav({ sessionUser, signOutAction }: HeaderNavProps) {
         )}
       </div>
 
-      {/* Mobile Hamburger Button */}
+      {/* Bouton Hamburger Mobile (SVG clean) */}
       <button
         type="button"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="flex md:hidden items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors"
+        className="flex md:hidden items-center justify-center p-2.5 rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 transition-colors"
         aria-label="Toggle Navigation Menu"
       >
-        <span className="material-symbols-outlined text-2xl">
-          {mobileMenuOpen ? "close" : "menu"}
-        </span>
+        {mobileMenuOpen ? (
+          <svg className="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )}
       </button>
 
-      {/* Mobile Drawer Menu */}
+      {/* Menu Rétractable Mobile */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-20 z-40 md:hidden border-b border-white/10 bg-[#0d0e12]/95 backdrop-blur-2xl p-6 shadow-2xl animate-fade-up">
+        <div className="fixed inset-x-0 top-20 z-50 md:hidden border-b border-white/15 bg-[#0d0e12] p-6 shadow-2xl animate-fade-up">
           <div className="flex flex-col gap-4 text-base font-medium text-white">
             {sessionUser ? (
               <>
@@ -97,36 +105,34 @@ export function HeaderNav({ sessionUser, signOutAction }: HeaderNavProps) {
                 <Link
                   href="/assistant"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-white/5 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-primary">smart_toy</span>
+                  <span className="text-primary font-bold">🤖</span>
                   Assistant AI
                 </Link>
                 <Link
                   href="/compte"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-white/5 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-primary">person</span>
+                  <span className="text-primary font-bold">👤</span>
                   Mon Compte
                 </Link>
                 {admin && (
                   <Link
                     href="/console"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 py-2 px-3 rounded-lg bg-primary/10 text-primary font-semibold"
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl bg-primary/10 text-primary font-semibold"
                   >
-                    <span className="material-symbols-outlined">shield_person</span>
-                    Console fondateur
+                    🛡️ Console fondateur
                   </Link>
                 )}
                 <form action={signOutAction} className="pt-2 border-t border-white/10">
                   <button
                     type="submit"
-                    className="w-full text-left flex items-center gap-3 py-2 px-3 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
                   >
-                    <span className="material-symbols-outlined">logout</span>
-                    Déconnexion
+                    🚪 Déconnexion
                   </button>
                 </form>
               </>
@@ -135,21 +141,21 @@ export function HeaderNav({ sessionUser, signOutAction }: HeaderNavProps) {
                 <Link
                   href="/tarifs"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                  className="py-2.5 px-3 rounded-xl hover:bg-white/5 transition-colors"
                 >
                   Tarifs
                 </Link>
                 <Link
                   href="/connexion"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-2.5 px-3 rounded-lg hover:bg-white/5 transition-colors"
+                  className="py-2.5 px-3 rounded-xl hover:bg-white/5 transition-colors"
                 >
                   Connexion
                 </Link>
                 <Link
                   href="/inscription"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="primary-glow mt-2 w-full text-center py-3 rounded-xl bg-primary font-bold text-white shadow-lg hover:bg-primary-hover"
+                  className="primary-glow mt-2 w-full text-center py-3.5 rounded-xl bg-primary font-bold text-white shadow-lg hover:bg-primary-hover"
                 >
                   Commencer gratuitement
                 </Link>

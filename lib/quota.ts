@@ -116,7 +116,7 @@ export async function checkMonthlyQuota(
       allowed: false,
       reason:
         type === UsageType.SEARCH
-          ? `Quota de recherches mensuel atteint (${limit}). Passez à un palier supérieur pour continuer.`
+          ? `Vos ${limit} recherches gratuites sont utilisées. Passez au palier Standard pour continuer à chercher.`
           : `Quota d'exports CSV mensuel atteint (${limit}).`,
       limit,
       current,

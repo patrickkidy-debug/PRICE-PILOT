@@ -8,8 +8,8 @@ html {
 
 body {
   font-family: var(--font-inter), sans-serif;
-  background-color: #0c1324;
-  color: #dce1fb;
+  background-color: #0d0e12;
+  color: #ffffff;
   overflow-x: hidden;
 }
 
@@ -26,85 +26,86 @@ body {
 }
 
 .glass {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(18, 20, 28, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .glass-card {
-  background: rgba(25, 31, 49, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
-  border-right: 1px solid rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(28, 32, 46, 0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .glass-card-hover:hover {
-  background: rgba(35, 41, 60, 0.8);
-  box-shadow: 0 0 30px rgba(180, 197, 255, 0.15);
+  background: rgba(38, 43, 62, 0.85);
+  box-shadow: 0 0 35px rgba(255, 102, 0, 0.25);
+  border-color: rgba(255, 102, 0, 0.4);
   transform: translateY(-5px);
 }
 
 .primary-glow {
-  box-shadow: 0 0 25px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 25px rgba(255, 102, 0, 0.45);
   transition: all 0.3s ease;
 }
 
 .primary-glow:hover {
-  box-shadow: 0 0 40px rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 45px rgba(255, 102, 0, 0.7);
 }
 
-/* Halo animé du hero — dégradés radiaux, sans WebGL ni dépendance externe. */
+/* Halo animé du hero en tons Orange & Blanc. */
 .aurora {
   background:
     radial-gradient(
       circle at 78% 22%,
-      rgba(37, 99, 235, 0.38),
+      rgba(255, 102, 0, 0.35),
       transparent 45%
     ),
     radial-gradient(
       circle at 18% 78%,
-      rgba(124, 58, 237, 0.3),
+      rgba(255, 153, 0, 0.25),
       transparent 45%
     ),
     radial-gradient(
       circle at 55% 50%,
-      rgba(6, 182, 212, 0.14),
+      rgba(255, 255, 255, 0.08),
       transparent 55%
     );
 }
 
-/* Grille discrète en fond, comme sur la maquette. */
+/* Grille discrète en fond. */
 .grid-overlay {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse at center, black, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 75%);
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #b4c5ff, #4cd7f6, #d2bbff);
+  background: linear-gradient(to right, #ffffff, #ff6600, #ffaa00);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .timeline-line {
-  background: linear-gradient(to right, transparent, #b4c5ff, transparent);
+  background: linear-gradient(to right, transparent, #ff6600, transparent);
 }
 
-/* Rendu Markdown des réponses de l'assistant, en thème sombre. */
+/* Rendu Markdown des réponses de l'assistant. */
 .reponse-ia h1,
 .reponse-ia h2,
 .reponse-ia h3 {
   font-weight: 700;
-  color: #dce1fb;
+  color: #ffffff;
   margin: 1rem 0 0.5rem;
 }
 .reponse-ia p {
@@ -116,7 +117,7 @@ body {
   font-weight: 600;
 }
 .reponse-ia a {
-  color: #4cd7f6;
+  color: #ff8800;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -141,19 +142,21 @@ body {
 }
 .reponse-ia th,
 .reponse-ia td {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0.5rem 0.75rem;
   text-align: left;
 }
 .reponse-ia th {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 102, 0, 0.1);
   font-weight: 600;
+  color: #ffffff;
 }
 .reponse-ia code {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 102, 0, 0.15);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
   font-size: 0.85em;
+  color: #ffaa00;
 }
 
 ::-webkit-scrollbar {
@@ -164,9 +167,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #434655;
+  background: #323850;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5a5e70;
+  background: #ff6600;
 }

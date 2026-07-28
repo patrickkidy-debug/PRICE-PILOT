@@ -20,6 +20,8 @@ export interface ResultatWeb {
   titre: string;
   url: string;
   extrait: string;
+  /** Illustration du produit, quand le fournisseur en renvoie une. */
+  image?: string;
 }
 
 export type FournisseurRecherche = "tavily" | "google_cse" | "duckduckgo";
@@ -59,7 +61,13 @@ async function chercherTavily(requete: string, nb: number): Promise<ResultatWeb[
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
     },
-    body: JSON.stringify({ query: requete, max_results: nb, search_depth: "basic" }),
+    body: JSON.stringify({
+      query: requete,
+      max_results: nb,
+      search_depth: "basic",
+      // Les images permettent d'illustrer les offres dans la réponse.
+      include_images: true,
+    }),
   });
 
   if (response.status === 429) {
@@ -71,13 +79,22 @@ async function chercherTavily(requete: string, nb: number): Promise<ResultatWeb[
 
   const data = (await response.json()) as {
     results?: { title?: string; url?: string; content?: string }[];
+    images?: (string | { url?: string })[];
   };
+
+  // Tavily renvoie les images à part, pas rattachées à un résultat : on les
+  // associe dans l'ordre, faute de correspondance explicite.
+  const images = (data.images ?? [])
+    .map((i) => (typeof i === "string" ? i : i?.url))
+    .filter((u): u is string => Boolean(u));
+
   return (data.results ?? [])
     .filter((r) => r.url)
-    .map((r) => ({
+    .map((r, i) => ({
       titre: r.title ?? r.url!,
       url: r.url!,
       extrait: (r.content ?? "").slice(0, 500),
+      image: images[i],
     }));
 }
 

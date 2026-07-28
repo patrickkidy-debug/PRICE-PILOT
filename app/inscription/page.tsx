@@ -12,7 +12,6 @@ export default function InscriptionPage() {
   const [password, setPassword] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
-  // La base est distante : sans indication d'étape, l'écran paraît figé.
   const [etape, setEtape] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -35,8 +34,6 @@ export default function InscriptionPage() {
     }
 
     if (!response.ok) {
-      // Une erreur serveur peut renvoyer un corps vide ou une page HTML : lire
-      // le JSON sans filet laissait le bouton tourner indéfiniment, sans message.
       const data = await response.json().catch(() => null);
       setChargement(false);
       setErreur(
@@ -56,26 +53,31 @@ export default function InscriptionPage() {
     }
 
     setEtape("Ouverture de votre espace…");
-    // On laisse le bouton en attente jusqu'à l'affichage de la page suivante :
-    // remettre `chargement` à false ici ferait clignoter le formulaire.
     router.push("/assistant");
     router.refresh();
   }
 
   return (
-    <main className="aurora flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="glass-card w-full max-w-md rounded-2xl p-8">
-        <Link href="/" className="mb-6 block text-xl font-bold text-primary">
-          PricePilot
+    <main className="aurora flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 py-12 bg-[#0d0e12] text-white">
+      <div className="glass-card w-full max-w-md rounded-3xl p-6 sm:p-10 border border-white/15 shadow-2xl shadow-primary/10">
+        <Link href="/" className="mb-8 flex items-center gap-2 group">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white font-bold group-hover:scale-105 transition-transform">
+            <span className="material-symbols-outlined text-xl">flight_takeoff</span>
+          </div>
+          <span className="text-2xl font-extrabold tracking-tight text-white">
+            Price<span className="text-primary">Pilot</span>
+          </span>
         </Link>
-        <h1 className="text-2xl font-bold text-on-surface">Créer un compte</h1>
-        <p className="mt-1 text-sm text-on-surface-variant">
+
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Créer un compte</h1>
+        <p className="mt-1 text-sm text-slate-300">
           Vous démarrez automatiquement sur le palier Gratuit.
         </p>
+
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant">
-              Nom
+            <label htmlFor="name" className="block text-sm font-semibold text-slate-200">
+              Nom complet
             </label>
             <input
               id="name"
@@ -83,12 +85,13 @@ export default function InscriptionPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-surface-container-high px-3 py-2"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Ex: Aminata Diallo"
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant">
-              Email
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-200">
+              Adresse email
             </label>
             <input
               id="email"
@@ -96,11 +99,12 @@ export default function InscriptionPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-surface-container-high px-3 py-2"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="votre@email.com"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-on-surface-variant">
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-200">
               Mot de passe
             </label>
             <input
@@ -110,14 +114,15 @@ export default function InscriptionPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-surface-container-high px-3 py-2"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Au moins 8 caractères"
             />
           </div>
-          {erreur && <p className="text-sm text-error">{erreur}</p>}
+          {erreur && <p className="text-sm font-medium text-rose-400">{erreur}</p>}
           <button
             type="submit"
             disabled={chargement}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-container px-4 py-2.5 font-semibold text-white primary-glow transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 font-bold text-white primary-glow transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-60 shadow-lg shadow-primary/25"
           >
             {chargement && (
               <span className="material-symbols-outlined animate-spin text-[18px]">
@@ -127,9 +132,10 @@ export default function InscriptionPage() {
             {chargement ? etape : "Créer mon compte"}
           </button>
         </form>
-        <p className="mt-4 text-sm text-on-surface-variant">
+
+        <p className="mt-6 text-sm text-slate-300 text-center">
           Déjà un compte ?{" "}
-          <Link href="/connexion" className="font-semibold text-primary">
+          <Link href="/connexion" className="font-bold text-primary hover:underline">
             Se connecter
           </Link>
         </p>

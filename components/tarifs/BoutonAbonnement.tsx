@@ -47,15 +47,15 @@ export function BoutonAbonnement({ planCode, libelle, misEnAvant, connecte }: Pr
       <button
         onClick={souscrire}
         disabled={chargement}
-        className={`w-full rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 ${
+        className={`w-full rounded-xl px-4 py-3.5 text-center text-sm font-bold transition-all active:scale-95 disabled:opacity-50 ${
           misEnAvant
-            ? "primary-glow bg-primary-container text-white"
-            : "border border-white/10 text-on-surface hover:bg-white/5"
+            ? "primary-glow bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/25"
+            : "border border-white/20 text-white hover:bg-white/10"
         }`}
       >
         {chargement ? "Redirection..." : libelle}
       </button>
-      {erreur && <p className="mt-2 text-xs text-error">{erreur}</p>}
+      {erreur && <p className="mt-2 text-xs text-rose-400 font-medium">{erreur}</p>}
     </div>
   );
 }

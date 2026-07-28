@@ -29,7 +29,8 @@ export const PLAN_DEFINITIONS: Record<
     name: "Gratuit",
     priceMinor: 0,
     priceCurrency: "XOF",
-    searchQuotaMonthly: 10,
+    // 5 recherches pour découvrir le produit, puis passage à l'abonnement.
+    searchQuotaMonthly: 5,
     searchRadiusKm: 3,
     maxCompareItems: 3,
     maxWatchlistItems: 1,
